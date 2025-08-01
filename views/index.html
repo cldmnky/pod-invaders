@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <!-- Bulma CSS Framework -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Custom styles for the game */
+        body, html {
+            height: 100%;
+            overflow: hidden; /* Prevents scrollbars from appearing */
+        }
+        body {
+            background-color: #0c0c0c;
+            color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative; /* Needed for overlay centering */
+        }
+        canvas {
+            background-color: #000;
+            border-radius: 8px;
+            border: 1px solid #363636;
+            max-width: 100%;
+        }
+        .info-panel {
+            width: 100%;
+            max-width: 600px; /* Match canvas width */
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* Align items vertically */
+            padding: 1rem 0;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .instructions {
+            margin-top: 1.5rem;
+            text-align: center;
+            color: #999;
+        }
+        .game-over-screen {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 2rem 3rem;
+            border-radius: 10px;
+            border: 1px solid #444;
+            z-index: 101;
+        }
+        .game-over-screen h2 {
+            font-size: 3rem;
+            color: #ff3860; /* Bulma danger color */
+            margin-bottom: 0.5rem;
+        }
+        .game-over-screen p {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        /* Countdown overlay styles */
+        #countdownOverlay {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 102;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 2rem 3rem;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        #countdownText {
+            font-size: 4rem;
+            color: #ffdd57;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+    <!-- Play to Start Overlay -->
+    <div id="playOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.92); z-index: 200; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+        <h2 style="color: #ffdd57; font-size: 3rem; margin-bottom: 1.5rem; font-family: 'Courier New', Courier, monospace;">Press Play to Start</h2>
+        <div style="margin-bottom: 1.5rem; width: 420px; max-width: 90vw;">
+            <label for="playerNameInput" style="color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; display: block;">Enter your name:</label>
+            <input id="playerNameInput" type="text" maxlength="32" style="width: 100%; border-radius: 8px; border: 1px solid #363636; background: #181818; color: #ffdd57; font-family: 'Courier New', Courier, monospace; font-size: 1rem; padding: 10px; margin-bottom: 10px;" placeholder="Your name..." />
+            <label for="monitorUrlInput" style="color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; display: block;">Monitor URL:</label>
+            <input id="monitorUrlInput" type="url" style="width: 100%; border-radius: 8px; border: 1px solid #363636; background: #181818; color: #23d160; font-family: 'Courier New', Courier, monospace; font-size: 1rem; padding: 10px; margin-bottom: 10px;" placeholder="https://your-app-endpoint.com/health" />
+            <label for="namespaceInput" style="color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; display: block;">Enter a list of namespaces (one per line):</label>
+            <textarea id="namespaceInput" rows="6" style="width: 100%; border-radius: 8px; border: 1px solid #363636; background: #181818; color: #39ff14; font-family: 'Courier New', Courier, monospace; font-size: 1rem; padding: 10px; resize: vertical;"></textarea>
+        </div>
+        <button id="playButton" class="button is-primary is-large" style="font-size: 2rem;">Play</button>
+    </div>
+
+    <section class="section pt-4 pb-4">
+        <div class="container has-text-centered">
+            <h1 class="title" style="color: #fff;">Pod Invaders</h1>
+        </div>
+    </section>
+
+    <div class="game-container">
+        <!-- Game Information Panel -->
+        <div class="info-panel">
+            <span id="scoreEl">Score: 0</span>
+            <span id="levelEl">Level: 1</span>
+            <span id="livesEl">Lives: 3</span>
+            <span id="monitoringStatusEl" style="margin-left:12px;"></span>
+            <!-- Mute/Unmute Button -->
+            <button id="muteButton" class="button is-dark is-small" title="Mute/Unmute">
+                <span class="icon">
+                    <i id="muteIcon" class="fas fa-volume-up"></i>
+                </span>
+            </button>
+            <!-- Music On/Off Button -->
+            <button id="musicButton" class="button is-dark is-small" title="Music On/Off" style="margin-left: 8px;">
+                <span class="icon">
+                    <i id="musicIcon" class="fas fa-music"></i>
+                </span>
+            </button>
+        </div>
+
+        <div style="display: flex; flex-direction: row; align-items: flex-start;">
+            <!-- The Game Canvas -->
+            <canvas id="gameCanvas"></canvas>
+            <!-- Sidebar for killed pods -->
+            <div id="killedPodsSidebar" style="width: 420px; height: 600px; background: #101010; color: #39ff14; font-family: 'Courier New', Courier, monospace; font-size: 15px; margin-left: 16px; border-radius: 12px; border: 1.5px solid #222; box-shadow: 0 0 24px 0 #000a; overflow-y: auto; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start;">
+                <div style="font-weight: bold; margin-bottom: 10px; color: #fff; font-size: 1.1em; letter-spacing: 1px;">Killed Invader Pods</div>
+                <pre id="killedPodsList" style="margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 1em; color: #39ff14; background: none; border: none; padding: 0;"></pre>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="game-over-screen">
+            <h2 id="endGameTitle" class="title is-1 has-text-danger">GAME OVER</h2>
+            <p class="subtitle has-text-light" id="finalScore">Your Score: 0</p>
+            <button id="restartButton" class="button is-primary is-large">Play Again</button>
+        </div>
+
+        <!-- Countdown Overlay -->
+        <div id="countdownOverlay">
+            <span id="countdownText"></span>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <p>Use ◀️ and ▶️ arrow keys to move. Press SPACE to shoot.</p>
+    </div>
+
+    <!-- Highscore Table: Always visible and below the instructions -->
+    <div style="margin-top:32px; text-align:center;">
+        <h2 style="color:#ffdd57; font-size:2rem; margin-bottom:12px; font-family:'Courier New', Courier, monospace;">
+            🏆 Pod Invaders Highscores 🚀
+        </h2>
+        <div id="highscoreTableContainer"></div>
+    </div>
+
+    <audio id="shootSound" preload="auto">
+        <source src="assets/laserSmall_004.ogg" type="audio/ogg">
+    </audio>
+    <audio id="explosionSound" preload="auto">
+        <source src="assets/impactMetal_004.ogg" type="audio/ogg">
+    </audio>
+    <audio id="hitBossSound" preload="auto">
+        <source src="assets/impactMetal_001.ogg" type="audio/ogg">
+    </audio>
+    <audio id="explosionBossSound" preload="auto">
+        <source src="assets/explosionCrunch_004.ogg" type="audio/ogg">
+    </audio>
+    <audio id="countDownSound" preload="auto">
+        <source src="assets/laserRetro_004.ogg" type="audio/ogg">
+    </audio>
+    <audio id="backgroundMusic" src="assets/music-slow.mp3" preload="auto" loop></audio>
+    <audio id="backgroundBossMusic" src="assets/music.mp3" preload="auto" loop></audio>
+    <script src="main.js" defer></script>
+</body>
+</html>
