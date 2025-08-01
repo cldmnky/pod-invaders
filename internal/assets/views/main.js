@@ -77,30 +77,72 @@ const INIT_INVADER_SPEED = invaderSpeed;
 const INIT_INVADER_PROJECTILE_FREQUENCY = invaderProjectileFrequency;
 const INIT_BOSS_PROJECTILE_FREQUENCY = bossProjectileFrequency;
 
-// DOM Elements
-const canvas = document.getElementById('gameCanvas');
-const scoreEl = document.getElementById('scoreEl');
-const livesEl = document.getElementById('livesEl');
-const levelEl = document.getElementById('levelEl');
-const gameOverScreen = document.getElementById('gameOverScreen');
-const endGameTitle = document.getElementById('endGameTitle');
-const finalScoreEl = document.getElementById('finalScore');
-const restartButton = document.getElementById('restartButton');
+// DOM Elements - Cache all elements at once to reduce DOM lookups
+const elements = {
+    canvas: document.getElementById('gameCanvas'),
+    scoreEl: document.getElementById('scoreEl'),
+    livesEl: document.getElementById('livesEl'),
+    levelEl: document.getElementById('levelEl'),
+    gameOverScreen: document.getElementById('gameOverScreen'),
+    endGameTitle: document.getElementById('endGameTitle'),
+    finalScoreEl: document.getElementById('finalScore'),
+    restartButton: document.getElementById('restartButton'),
+    killedPodsList: document.getElementById('killedPodsList'),
+    muteButton: document.getElementById('muteButton'),
+    muteIcon: document.getElementById('muteIcon'),
+    countdownOverlay: document.getElementById('countdownOverlay'),
+    countdownText: document.getElementById('countdownText'),
+    musicButton: document.getElementById('musicButton'),
+    musicIcon: document.getElementById('musicIcon'),
+    playOverlay: document.getElementById('playOverlay'),
+    playButton: document.getElementById('playButton'),
+    playerNameInput: document.getElementById('playerNameInput'),
+    namespaceInput: document.getElementById('namespaceInput'),
+    monitorUrlInput: document.getElementById('monitorUrlInput'),
+    monitoringStatusEl: document.getElementById('monitoringStatusEl'),
+    highscoreTableContainer: document.getElementById('highscoreTableContainer')
+};
+
+// Extract commonly used elements for better performance
+const canvas = elements.canvas;
+const scoreEl = elements.scoreEl;
+const livesEl = elements.livesEl;
+const levelEl = elements.levelEl;
+const gameOverScreen = elements.gameOverScreen;
+const endGameTitle = elements.endGameTitle;
+const finalScoreEl = elements.finalScoreEl;
+const restartButton = elements.restartButton;
 const ctx = canvas.getContext('2d');
-const killedPodsList = document.getElementById('killedPodsList');
-const muteButton = document.getElementById('muteButton');
-const muteIcon = document.getElementById('muteIcon');
-const countdownOverlay = document.getElementById('countdownOverlay');
-const countdownText = document.getElementById('countdownText');
+const killedPodsList = elements.killedPodsList;
+const muteButton = elements.muteButton;
+const muteIcon = elements.muteIcon;
+const countdownOverlay = elements.countdownOverlay;
+const countdownText = elements.countdownText;
+
+// Apply initial styling for proper spacing
+if (scoreEl) scoreEl.style.marginRight = '20px';
+if (livesEl) livesEl.style.marginRight = '20px';
+if (levelEl) levelEl.style.marginRight = '20px';
 
 // Audio Elements
-const shootSound = document.getElementById('shootSound');
-const explosionSound = document.getElementById('explosionSound');
-const backgroundMusic = document.getElementById('backgroundMusic');
-const backgroundBossMusic = document.getElementById('backgroundBossMusic');
-const hitBossSound = document.getElementById('hitBossSound');
-const explosionBossSound = document.getElementById('explosionBossSound');
-const countDownSound = document.getElementById('countDownSound');
+const audioElements = {
+    shootSound: document.getElementById('shootSound'),
+    explosionSound: document.getElementById('explosionSound'),
+    backgroundMusic: document.getElementById('backgroundMusic'),
+    backgroundBossMusic: document.getElementById('backgroundBossMusic'),
+    hitBossSound: document.getElementById('hitBossSound'),
+    explosionBossSound: document.getElementById('explosionBossSound'),
+    countDownSound: document.getElementById('countDownSound')
+};
+
+// Extract commonly used audio elements
+const shootSound = audioElements.shootSound;
+const explosionSound = audioElements.explosionSound;
+const backgroundMusic = audioElements.backgroundMusic;
+const backgroundBossMusic = audioElements.backgroundBossMusic;
+const hitBossSound = audioElements.hitBossSound;
+const explosionBossSound = audioElements.explosionBossSound;
+const countDownSound = audioElements.countDownSound;
 
 // --- Audio Functions ---
 let audioContext;
@@ -112,9 +154,8 @@ function initAudio() {
     if (isAudioInitialized) return;
     try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const sources = [shootSound, explosionSound, backgroundMusic, backgroundBossMusic].map(
-            el => audioContext.createMediaElementSource(el)
-        );
+        const soundElements = [shootSound, explosionSound, backgroundMusic, backgroundBossMusic];
+        const sources = soundElements.map(el => audioContext.createMediaElementSource(el));
         sources.forEach(source => source.connect(audioContext.destination));
 
         if (audioContext.state === 'suspended') {
@@ -127,42 +168,33 @@ function initAudio() {
     }
 }
 
+// Optimized audio functions with reduced redundancy
+function playAudioElement(element, errorMessage) {
+    if (!isAudioInitialized || isMuted || !element) return;
+    try {
+        element.currentTime = 0;
+        element.play();
+    } catch (e) {
+        console.warn(errorMessage, e);
+    }
+}
+
 function playShootSound() {
-    if (!isAudioInitialized || isMuted) return;
-    try {
-        shootSound.currentTime = 0;
-        shootSound.play();
-    } catch (e) {
-        console.warn('Could not play shoot sound:', e);
-    }
+    playAudioElement(shootSound, 'Could not play shoot sound:');
 }
+
 function playExplosionSound() {
-    if (!isAudioInitialized || isMuted) return;
-    try {
-        explosionSound.currentTime = 0;
-        explosionSound.play();
-    } catch (e) {
-        console.warn('Could not play explosion sound:', e);
-    }
+    playAudioElement(explosionSound, 'Could not play explosion sound:');
 }
+
 function playhitBossSound() {
-    if (!isAudioInitialized || isMuted) return;
-    try {
-        hitBossSound.currentTime = 0;
-        hitBossSound.play();
-    } catch (e) {
-        console.warn('Could not play boss explosion sound:', e);
-    }
+    playAudioElement(hitBossSound, 'Could not play boss hit sound:');
 }
+
 function playExplosionBossSound() {
-    if (!isAudioInitialized || isMuted) return;
-    try {
-        explosionBossSound.currentTime = 0;
-        explosionBossSound.play();
-    } catch (e) {
-        console.warn('Could not play boss explosion sound:', e);
-    }
+    playAudioElement(explosionBossSound, 'Could not play boss explosion sound:');
 }
+
 function playCountDownSound() {
     if (!countDownSound) return;
     try {
@@ -185,6 +217,16 @@ function switchMusic(isBossLevel) {
 // Canvas setup
 canvas.width = 600;
 canvas.height = 600;
+
+// Cache canvas dimensions for performance
+const CANVAS_WIDTH = canvas.width;
+const CANVAS_HEIGHT = canvas.height;
+const CANVAS_CENTER_X = CANVAS_WIDTH / 2;
+const CANVAS_CENTER_Y = CANVAS_HEIGHT / 2;
+
+// Math constants for performance
+const PI2 = Math.PI * 2;
+const PI_HALF = Math.PI / 2;
 
 // --- Game Data ---
 const levelConfigs = [
@@ -216,28 +258,31 @@ class Player {
     constructor() {
         this.width = 50;
         this.height = 40;
-        this.position = { x: canvas.width / 2 - this.width / 2, y: canvas.height - this.height - 20 };
+        this.position = { x: CANVAS_CENTER_X - 25, y: CANVAS_HEIGHT - 60 }; // Optimized calculation
         this.velocity = { x: 0, y: 0 };
         this.speed = 5;
         this.opacity = 1;
         this.haloTimer = 0; // Frames remaining for red halo
         this.haloMax = 60; // Duration for halo effect
+        // Cache commonly used values
+        this.halfWidth = this.width / 2;
+        this.halfHeight = this.height / 2;
     }
+    
     draw() {
         ctx.save();
         ctx.globalAlpha = this.opacity;
         ctx.translate(this.position.x, this.position.y);
-        const headX = this.width / 2, headY = this.height / 2;
-        // Draw glowing, fading red halo if hit
+        const headX = this.halfWidth, headY = this.halfHeight;
+        
+        // Draw glowing, fading red halo if hit - optimized
         if (this.haloTimer > 0) {
-            // Fade out
             const fade = this.haloTimer / this.haloMax;
-            // Glow pulse
             const pulse = 1.5 + Math.sin(frames * 0.3) * 1.5;
             ctx.save();
             ctx.globalAlpha = 0.6 * fade;
             ctx.beginPath();
-            ctx.arc(headX, headY, 35 + pulse * 2, 0, Math.PI * 2);
+            ctx.arc(headX, headY, 35 + pulse * 2, 0, PI2);
             ctx.strokeStyle = `rgba(255,56,96,${0.7 * fade})`;
             ctx.shadowColor = '#ff3860';
             ctx.shadowBlur = 18 * fade + pulse * 4;
@@ -245,24 +290,39 @@ class Player {
             ctx.stroke();
             ctx.restore();
         }
+        
+        // Draw player character - optimized with reused paths
         ctx.fillStyle = '#A0522D';
-        ctx.beginPath(); ctx.arc(headX - 20, headY - 5, 10, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(headX + 20, headY - 5, 10, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(headX, headY, 20, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(headX - 20, headY - 5, 10, 0, PI2); ctx.fill();
+        ctx.beginPath(); ctx.arc(headX + 20, headY - 5, 10, 0, PI2); ctx.fill();
+        ctx.beginPath(); ctx.arc(headX, headY, 20, 0, PI2); ctx.fill();
+        
         ctx.fillStyle = '#F5DEB3';
-        ctx.beginPath(); ctx.arc(headX, headY + 5, 15, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(headX, headY + 5, 15, 0, PI2); ctx.fill();
+        
         ctx.fillStyle = 'black';
-        ctx.beginPath(); ctx.arc(headX - 7, headY, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(headX + 7, headY, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = 'black'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(headX, headY + 10, 8, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+        ctx.beginPath(); ctx.arc(headX - 7, headY, 3, 0, PI2); ctx.fill();
+        ctx.beginPath(); ctx.arc(headX + 7, headY, 3, 0, PI2); ctx.fill();
+        
+        ctx.strokeStyle = 'black'; 
+        ctx.lineWidth = 2;
+        ctx.beginPath(); 
+        ctx.arc(headX, headY + 10, 8, 0.2 * Math.PI, 0.8 * Math.PI); 
+        ctx.stroke();
         ctx.restore();
     }
+    
     update() {
         this.draw();
         this.position.x += this.velocity.x;
-        if (this.position.x < 0) this.position.x = 0;
-        else if (this.position.x + this.width > canvas.width) this.position.x = canvas.width - this.width;
+        
+        // Boundary checking with cached values
+        if (this.position.x < 0) {
+            this.position.x = 0;
+        } else if (this.position.x + this.width > CANVAS_WIDTH) {
+            this.position.x = CANVAS_WIDTH - this.width;
+        }
+        
         if (this.haloTimer > 0) this.haloTimer--;
     }
 }
@@ -273,40 +333,61 @@ class Projectile {
         this.velocity = velocity;
         this.radius = 4;
     }
+    
     draw() {
-        ctx.beginPath(); ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffdd57'; ctx.fill(); ctx.closePath();
+        ctx.beginPath(); 
+        ctx.arc(this.position.x, this.position.y, this.radius, 0, PI2);
+        ctx.fillStyle = '#ffdd57'; 
+        ctx.fill();
     }
-    update() { this.draw(); this.position.x += this.velocity.x; this.position.y += this.velocity.y; }
+    
+    update() { 
+        this.draw(); 
+        this.position.x += this.velocity.x; 
+        this.position.y += this.velocity.y; 
+    }
 }
 
 class InvaderProjectile {
     constructor({ position, velocity, isBoss }) {
         this.position = position;
         this.velocity = velocity;
-        this.width = 3; this.height = 10;
+        this.width = 3; 
+        this.height = 10;
         this.isBoss = isBoss || false;
     }
+    
     draw() {
+        const x = this.position.x, y = this.position.y;
+        
         if (this.isBoss) {
-            // Draw a simple robot: head, eyes, antenna
-            const x = this.position.x, y = this.position.y;
+            // Draw a simple robot: head, eyes, antenna - optimized
             ctx.save();
             // Head
             ctx.fillStyle = '#b0b0b0';
             ctx.fillRect(x - 7, y, 14, 14);
             // Eyes
             ctx.fillStyle = '#326ce5';
-            ctx.beginPath(); ctx.arc(x - 3, y + 5, 2, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(x + 3, y + 5, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); 
+            ctx.arc(x - 3, y + 5, 2, 0, PI2); 
+            ctx.fill();
+            ctx.beginPath(); 
+            ctx.arc(x + 3, y + 5, 2, 0, PI2); 
+            ctx.fill();
             // Antenna
-            ctx.strokeStyle = '#ff3860'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y - 6); ctx.stroke();
-            ctx.beginPath(); ctx.arc(x, y - 7, 2, 0, Math.PI * 2); ctx.fillStyle = '#ffdd57'; ctx.fill();
+            ctx.strokeStyle = '#ff3860'; 
+            ctx.lineWidth = 2;
+            ctx.beginPath(); 
+            ctx.moveTo(x, y); 
+            ctx.lineTo(x, y - 6); 
+            ctx.stroke();
+            ctx.beginPath(); 
+            ctx.arc(x, y - 7, 2, 0, PI2); 
+            ctx.fillStyle = '#ffdd57'; 
+            ctx.fill();
             ctx.restore();
         } else {
-            // Missile body
-            const x = this.position.x, y = this.position.y;
+            // Missile body - optimized drawing
             ctx.save();
             // Body
             ctx.fillStyle = '#b0b0b0';
@@ -335,45 +416,79 @@ class InvaderProjectile {
             ctx.fill();
             // Exhaust glow
             ctx.beginPath();
-            ctx.arc(x + 1.5, y + 18, 4, 0, Math.PI * 2);
+            ctx.arc(x + 1.5, y + 18, 4, 0, PI2);
             ctx.fillStyle = 'rgba(255,221,87,0.5)';
             ctx.fill();
             ctx.restore();
         }
     }
-    update() { this.draw(); this.position.x += this.velocity.x; this.position.y += this.velocity.y; }
+    
+    update() { 
+        this.draw(); 
+        this.position.x += this.velocity.x; 
+        this.position.y += this.velocity.y; 
+    }
 }
 
 class Invader {
     constructor({ position, name, namespace, isRealPod }) {
-        this.width = 35; this.height = 35;
+        this.width = 35; 
+        this.height = 35;
         this.position = { x: position.x, y: position.y };
-        this.name = name; this.namespace = namespace;
-        this.isRealPod = isRealPod; this.isKilled = false; // Track if this pod has been killed
+        this.name = name; 
+        this.namespace = namespace;
+        this.isRealPod = isRealPod; 
+        this.isKilled = false; // Track if this pod has been killed
         this.hits = 0; // Track number of hits for real pods
+        // Cache commonly used values
+        this.halfWidth = this.width * 0.5;
+        this.halfHeight = this.height * 0.5;
     }
+    
     draw() {
         const x = this.position.x, y = this.position.y, w = this.width, h = this.height;
         ctx.save();
         ctx.fillStyle = this.isRealPod ? '#326ce5' : '#ff9800';
+        
+        // Optimized hexagon drawing
         ctx.beginPath();
-        ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h * 0.25); ctx.lineTo(x + w, y + h * 0.75);
-        ctx.lineTo(x + w * 0.5, y + h); ctx.lineTo(x, y + h * 0.75); ctx.lineTo(x, y + h * 0.25);
-        ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = 'white'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.rect(x + w * 0.25, y + h * 0.3, w * 0.5, h * 0.4);
-        ctx.moveTo(x + w * 0.25, y + h * 0.3); ctx.lineTo(x + w * 0.4, y + h * 0.2);
-        ctx.lineTo(x + w * 0.65, y + h * 0.2); ctx.lineTo(x + w * 0.75, y + h * 0.3);
-        ctx.moveTo(x + w * 0.75, y + h * 0.3); ctx.lineTo(x + w * 0.65, y + h * 0.45);
-        ctx.lineTo(x + w * 0.65, y + h * 0.6); ctx.lineTo(x + w * 0.75, y + h * 0.7);
-        ctx.stroke(); ctx.restore();
+        ctx.moveTo(x + this.halfWidth, y); 
+        ctx.lineTo(x + w, y + h * 0.25); 
+        ctx.lineTo(x + w, y + h * 0.75);
+        ctx.lineTo(x + this.halfWidth, y + h); 
+        ctx.lineTo(x, y + h * 0.75); 
+        ctx.lineTo(x, y + h * 0.25);
+        ctx.closePath(); 
+        ctx.fill();
+        
+        // Optimized detail drawing
+        ctx.strokeStyle = 'white'; 
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); 
+        ctx.rect(x + w * 0.25, y + h * 0.3, w * 0.5, h * 0.4);
+        ctx.moveTo(x + w * 0.25, y + h * 0.3); 
+        ctx.lineTo(x + w * 0.4, y + h * 0.2);
+        ctx.lineTo(x + w * 0.65, y + h * 0.2); 
+        ctx.lineTo(x + w * 0.75, y + h * 0.3);
+        ctx.moveTo(x + w * 0.75, y + h * 0.3); 
+        ctx.lineTo(x + w * 0.65, y + h * 0.45);
+        ctx.lineTo(x + w * 0.65, y + h * 0.6); 
+        ctx.lineTo(x + w * 0.75, y + h * 0.7);
+        ctx.stroke(); 
+        ctx.restore();
     }
-    update({ velocity }) { this.draw(); this.position.x += velocity.x; this.position.y += velocity.y; }
+    
+    update({ velocity }) { 
+        this.draw(); 
+        this.position.x += velocity.x; 
+        this.position.y += velocity.y; 
+    }
+    
     shoot(invaderProjectiles) {
         // Add larger random angle to invader projectiles
         const angle = (Math.random() - 0.5) * 2.0; // -1.0 to +1.0
         invaderProjectiles.push(new InvaderProjectile({
-            position: { x: this.position.x + this.width / 2, y: this.position.y + this.height },
+            position: { x: this.position.x + this.halfWidth, y: this.position.y + this.height },
             velocity: { x: angle, y: invaderProjectileSpeed },
         }));
     }
@@ -383,13 +498,16 @@ class Boss {
     constructor() {
         this.width = 150;
         this.height = 150;
-        this.position = { x: canvas.width / 2 - this.width / 2, y: 50 };
+        this.position = { x: CANVAS_CENTER_X - 75, y: 50 }; // Optimized calculation
         this.baseY = this.position.y; // Store initial Y position
         this.velocity = { x: 2, y: 0 };
         this.maxHealth = bossMaxHits;
         this.health = this.maxHealth;
         this.image = bossImage;
         this.nextFireFrame = 0;
+        // Cache boundary values
+        this.leftBoundary = 0;
+        this.rightBoundary = CANVAS_WIDTH - this.width;
     }
 
     draw() {
@@ -404,9 +522,11 @@ class Boss {
     update() {
         this.draw();
         this.position.x += this.velocity.x;
-        // Up/down movement using sine wave
+        // Up/down movement using sine wave - optimized calculation
         this.position.y = this.baseY + bossVerticalAmplitude * Math.sin(frames * bossVerticalFrequency);
-        if (this.position.x <= 0 || this.position.x + this.width >= canvas.width) {
+        
+        // Boundary checking with cached values
+        if (this.position.x <= this.leftBoundary || this.position.x >= this.rightBoundary) {
             this.velocity.x *= -1;
         }
     }
@@ -415,7 +535,7 @@ class Boss {
         // Fire with a random angle/spread
         const spread = Math.random() * 4 - 2; // -2 to +2
         projectiles.push(new InvaderProjectile({
-            position: { x: this.position.x + this.width / 2, y: this.position.y + this.height },
+            position: { x: this.position.x + 75, y: this.position.y + this.height }, // Use cached half-width
             velocity: { x: spread, y: bossProjectileSpeed },
             isBoss: true
         }));
@@ -431,60 +551,88 @@ class Grid {
         this.position = { x: 0, y: 0 };
         this.velocity = { x: invaderSpeed, y: 0 };
         this.invaders = [];
+        this.width = 0;
+        // Cache boundary values for performance
+        this.leftBoundary = 0;
+        this.rightBoundary = CANVAS_WIDTH;
     }
+    
     async init(level) {
         const config = levelConfigs[level - 1];
         if (!config) return;
 
         const { rows, cols } = config;
         this.width = cols * 45;
+        
         try {
             const response = await fetch(`/names?count=${rows * cols}`);
             if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
             const names = await response.json();
             let nameIndex = 0;
+            
+            // Pre-allocate array for better performance
+            this.invaders = new Array(rows * cols);
+            let invaderIndex = 0;
+            
             for (let x = 0; x < cols; x++) {
                 for (let y = 0; y < rows; y++) {
-                    this.invaders.push(new Invader({
+                    this.invaders[invaderIndex++] = new Invader({
                         position: { x: x * 45, y: y * 45 + 50 },
                         name: names[nameIndex]?.name || podNames[Math.floor(Math.random() * podNames.length)],
                         namespace: names[nameIndex]?.namespace || podNames[Math.floor(Math.random() * podNames.length)],
                         isRealPod: names[nameIndex]?.isRealPod || false
-                    }));
+                    });
                     nameIndex++;
                 }
             }
         } catch (error) {
             console.error("Failed to fetch invader names:", error);
             const { rows, cols } = levelConfigs[level - 1];
+            this.invaders = new Array(rows * cols);
+            let invaderIndex = 0;
+            
             for (let x = 0; x < cols; x++) {
                 for (let y = 0; y < rows; y++) {
-                    this.invaders.push(new Invader({
+                    this.invaders[invaderIndex++] = new Invader({
                         position: { x: x * 45, y: y * 45 + 50 },
                         name: `invader-${x}-${y}`,
                         namespace: `invader-${x}-${y}`,
                         isRealPod: false
-                    }));
+                    });
                 }
             }
         }
-        // randomize this.invaders using Fisher-Yates shuffle
+        
+        // Fisher-Yates shuffle optimization
         for (let i = this.invaders.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [this.invaders[i], this.invaders[j]] = [this.invaders[j], this.invaders[i]];
+            const temp = this.invaders[i];
+            this.invaders[i] = this.invaders[j];
+            this.invaders[j] = temp;
         }
     }
+    
     update() {
-        if (this.invaders.length === 0) return;
-        let minX = this.invaders[0].position.x, maxX = this.invaders[0].position.x + this.invaders[0].width;
-        for (const invader of this.invaders) {
+        const invaderCount = this.invaders.length;
+        if (invaderCount === 0) return;
+        
+        // Optimized boundary calculation
+        let minX = this.invaders[0].position.x;
+        let maxX = this.invaders[0].position.x + 35; // Use cached width
+        
+        for (let i = 1; i < invaderCount; i++) {
+            const invader = this.invaders[i];
             if (invader.position.x < minX) minX = invader.position.x;
-            if (invader.position.x + invader.width > maxX) maxX = invader.position.x + invader.width;
+            const rightEdge = invader.position.x + 35;
+            if (rightEdge > maxX) maxX = rightEdge;
         }
+        
         this.velocity.y = 0;
-        if (maxX + this.velocity.x >= canvas.width || minX + this.velocity.x <= 0) {
-            this.velocity.x = -this.velocity.x; this.velocity.y = 30;
+        if (maxX + this.velocity.x >= this.rightBoundary || minX + this.velocity.x <= this.leftBoundary) {
+            this.velocity.x = -this.velocity.x; 
+            this.velocity.y = 30;
         }
+        
         // Ensure velocity.x always matches global invaderSpeed
         this.velocity.x = Math.sign(this.velocity.x) * invaderSpeed;
     }
@@ -531,34 +679,96 @@ bossImage.src = 'assets/boss.png';
 let gameStartedTimestamp;
 let playerName = '';
 
+// Performance optimization: Cache score display to reduce DOM updates
+let lastScoreDisplay = '';
+function updateScore(newScore) {
+    score = newScore;
+    const scoreDisplay = `Score: ${score}`;
+    if (scoreDisplay !== lastScoreDisplay) {
+        scoreEl.innerHTML = scoreDisplay;
+        scoreEl.style.marginRight = '20px'; // Add spacing
+        lastScoreDisplay = scoreDisplay;
+    }
+}
+
+// Cache lives display
+let lastLivesDisplay = '';
+function updateLives(newLives) {
+    lives = newLives;
+    const livesDisplay = `Lives: ${lives}`;
+    if (livesDisplay !== lastLivesDisplay) {
+        livesEl.innerHTML = livesDisplay;
+        livesEl.style.marginRight = '20px'; // Add spacing
+        lastLivesDisplay = livesDisplay;
+    }
+}
+
+// Cache level display
+let lastLevelDisplay = '';
+function updateLevel(newLevel) {
+    level = newLevel;
+    const levelDisplay = `Level: ${level}`;
+    if (levelDisplay !== lastLevelDisplay) {
+        levelEl.innerHTML = levelDisplay;
+        levelEl.style.marginRight = '20px'; // Add spacing
+        lastLevelDisplay = levelDisplay;
+    }
+}
+
 // --- Object Pools ---
 const particlePool = [];
 const projectilePool = [];
 
+// Optimized object pool functions with better memory management
 function getParticle(params) {
     let p = particlePool.length > 0 ? particlePool.pop() : new Particle(params);
-    // Reset properties
-    p.position = { ...params.position };
-    p.velocity = { ...params.velocity };
-    p.radius = params.radius;
-    p.color = params.color || '#326ce5';
-    p.opacity = 1;
-    p.fades = params.fades;
+    // Reset properties efficiently
+    Object.assign(p, {
+        position: { x: params.position.x, y: params.position.y },
+        velocity: { x: params.velocity.x, y: params.velocity.y },
+        radius: params.radius,
+        color: params.color || '#326ce5',
+        opacity: 1,
+        fades: params.fades
+    });
     return p;
 }
+
 function releaseParticle(p) {
-    particlePool.push(p);
+    if (particlePool.length < 100) { // Limit pool size
+        particlePool.push(p);
+    }
 }
 
 function getProjectile(params) {
     let pr = projectilePool.length > 0 ? projectilePool.pop() : new Projectile(params);
-    pr.position = { ...params.position };
-    pr.velocity = { ...params.velocity };
-    pr.radius = 4;
+    Object.assign(pr, {
+        position: { x: params.position.x, y: params.position.y },
+        velocity: { x: params.velocity.x, y: params.velocity.y },
+        radius: 4
+    });
     return pr;
 }
+
 function releaseProjectile(pr) {
-    projectilePool.push(pr);
+    if (projectilePool.length < 50) { // Limit pool size
+        projectilePool.push(pr);
+    }
+}
+
+// Optimized collision detection functions
+function checkRectCollision(rect1, rect2) {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
+}
+
+function checkCircleRectCollision(circle, rect) {
+    return circle.x - circle.radius <= rect.x + rect.width &&
+           circle.x + circle.radius >= rect.x &&
+           circle.y - circle.radius <= rect.y + rect.height &&
+           circle.y + circle.radius >= rect.y;
 }
 
 async function init() {
@@ -570,20 +780,35 @@ async function init() {
     invaderSpeed = INIT_INVADER_SPEED;
     invaderProjectileFrequency = INIT_INVADER_PROJECTILE_FREQUENCY;
     bossProjectileFrequency = INIT_BOSS_PROJECTILE_FREQUENCY;
+    
     player = new Player();
-    projectiles = []; invaderProjectiles = []; particles = []; flashingTexts = [];
-    keys = { arrowLeft: { pressed: false }, arrowRight: { pressed: false }, space: { pressed: false } };
-    score = 0; lives = 3; level = 1;
+    projectiles = []; 
+    invaderProjectiles = []; 
+    particles = []; 
+    flashingTexts = [];
+    keys = { 
+        arrowLeft: { pressed: false }, 
+        arrowRight: { pressed: false }, 
+        space: { pressed: false } 
+    };
+    
+    // Use optimized update functions
+    updateScore(0);
+    updateLives(3);
+    updateLevel(1);
+    
     game = { over: false, active: false };
     frames = 0;
     boss = null;
     grids = [];
 
-    scoreEl.innerHTML = `Score: ${score}`;
-    livesEl.innerHTML = `Lives: ${lives}`;
-    levelEl.innerHTML = `Level: ${level}`;
     gameOverScreen.style.display = 'none';
     countdownOverlay.style.display = 'none';
+    
+    // Reset cached display values
+    lastScoreDisplay = '';
+    lastLivesDisplay = '';
+    lastLevelDisplay = '';
 }
 
 // --- Game Logic ---
@@ -605,11 +830,11 @@ function showHighscoreTable() {
     fetch('/highscores')
         .then(res => res.json())
         .then(data => {
-            const container = document.getElementById('highscoreTableContainer');
+            const container = elements.highscoreTableContainer;
             if (container) container.innerHTML = renderHighscoreTable(data);
         })
         .catch(() => {
-            const container = document.getElementById('highscoreTableContainer');
+            const container = elements.highscoreTableContainer;
             if (container) container.innerHTML = '<p>Could not load highscores.</p>';
         });
 }
@@ -702,12 +927,10 @@ async function advanceLevel() {
 
     // Add 1000 points if monitoring is up
     if (monitorIsUp) {
-        score += 1000;
-        if (scoreEl) scoreEl.innerHTML = `Score: ${score}`;
+        updateScore(score + 1000);
     }
 
-    level++;
-    levelEl.innerHTML = `Level: ${level}`;
+    updateLevel(level + 1);
     invaderProjectileSpeed += 0.2;
     boss = null;
     grids = [];
@@ -788,7 +1011,7 @@ function showDebugPanel() {
     updateDebugPanel();
 }
 function updateMonitoringStatusEl() {
-    const el = document.getElementById('monitoringStatusEl');
+    const el = elements.monitoringStatusEl;
     if (!el) return;
     if (monitorIsUp) {
         el.innerHTML = '<span style="color:#23d160;font-size:1.2em;">Monitoring: &#x2705;</span>';
@@ -875,118 +1098,152 @@ function updateDebugPanelMonitorStatus(text) {
 function animate() {
     if (!game.active) return;
     animationId = requestAnimationFrame(animate);
-    ctx.fillStyle = 'black'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Clear canvas efficiently
+    ctx.fillStyle = 'black'; 
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    
     player.update();
 
-    // --- Optimized update & removal for particles ---
-    particles = particles.filter((p) => {
+    // --- Optimized particle system ---
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
         if (p.opacity <= 0) {
             releaseParticle(p);
-            return false;
+            particles.splice(i, 1);
+        } else {
+            p.update();
         }
-        p.update();
-        return true;
-    });
-    // --- Optimized update & removal for flashingTexts ---
-    flashingTexts = flashingTexts.filter((t) => {
-        if (t.life <= 0) return false;
-        t.update();
-        return true;
-    });
+    }
 
-    // --- Optimized update & removal for invaderProjectiles ---
-    invaderProjectiles = invaderProjectiles.filter((proj) => {
-        if (proj.position.y + proj.height >= canvas.height) return false;
+    // --- Optimized flashing text system ---
+    for (let i = flashingTexts.length - 1; i >= 0; i--) {
+        const t = flashingTexts[i];
+        if (t.life <= 0) {
+            flashingTexts.splice(i, 1);
+        } else {
+            t.update();
+        }
+    }
+
+    // --- Optimized invader projectiles with collision detection ---
+    for (let i = invaderProjectiles.length - 1; i >= 0; i--) {
+        const proj = invaderProjectiles[i];
+        
+        if (proj.position.y + proj.height >= CANVAS_HEIGHT) {
+            invaderProjectiles.splice(i, 1);
+            continue;
+        }
+        
         proj.update();
-        // Collision with player
-        if (
-            proj.position.y + proj.height >= player.position.y &&
-            proj.position.y <= player.position.y + player.height &&
-            proj.position.x + proj.width >= player.position.x &&
-            proj.position.x <= player.position.x + player.width
-        ) {
-            lives--;
-            livesEl.innerHTML = `Lives: ${lives}`;
+        
+        // Player collision check using optimized function
+        if (checkRectCollision(
+            { x: proj.position.x, y: proj.position.y, width: proj.width, height: proj.height },
+            { x: player.position.x, y: player.position.y, width: player.width, height: player.height }
+        )) {
+            updateLives(lives - 1);
             player.haloTimer = 60;
-            if (lives > 0) createParticles({ object: player, color: 'white', amount: 15 });
-            else endGame();
-            return false;
+            if (lives > 0) {
+                createParticles({ object: player, color: 'white', amount: 15 });
+            } else {
+                endGame();
+            }
+            invaderProjectiles.splice(i, 1);
         }
-        return true;
-    });
+    }
 
-    // --- Optimized update & removal for projectiles ---
-    projectiles = projectiles.filter((pr) => {
+    // --- Optimized player projectiles ---
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const pr = projectiles[i];
         if (pr.position.y + pr.radius <= 0) {
             releaseProjectile(pr);
-            return false;
+            projectiles.splice(i, 1);
+        } else {
+            pr.update();
         }
-        pr.update();
-        return true;
-    });
+    }
 
+    // --- Boss logic optimization ---
     if (boss) {
         boss.update();
+        
         if (frames >= boss.nextFireFrame) {
             boss.shoot(invaderProjectiles);
             boss.nextFireFrame = frames + bossProjectileFrequency + Math.floor(Math.random() * bossProjectileFrequency);
         }
-        projectiles.forEach((projectile, j) => {
-            if (
-                projectile.position.y - projectile.radius <= boss.position.y + boss.height &&
-                projectile.position.x + projectile.radius >= boss.position.x &&
-                projectile.position.x - projectile.radius <= boss.position.x + boss.width &&
-                projectile.position.y + projectile.radius >= boss.position.y
-            ) {
-                if (!projectiles.includes(projectile)) return;
+        
+        // Boss collision with projectiles - optimized
+        for (let j = projectiles.length - 1; j >= 0; j--) {
+            const projectile = projectiles[j];
+            if (checkCircleRectCollision(
+                { x: projectile.position.x, y: projectile.position.y, radius: projectile.radius },
+                { x: boss.position.x, y: boss.position.y, width: boss.width, height: boss.height }
+            )) {
                 projectiles.splice(j, 1);
                 boss.takeDamage();
                 playhitBossSound();
-                createParticles({ object: { position: projectile.position, width: 10, height: 10 }, color: '#D92A2A', amount: 8 });
+                createParticles({ 
+                    object: { position: projectile.position, width: 10, height: 10 }, 
+                    color: '#D92A2A', 
+                    amount: 8 
+                });
+                
                 if (boss.health <= 0) {
-                    score += 1000;
-                    scoreEl.innerHTML = `Score: ${score}`;
+                    updateScore(score + 1000);
                     createParticles({ object: boss, color: '#D92A2A', amount: 100 });
                     playExplosionBossSound();
                     playExplosionSound();
                     boss = null;
                     advanceLevel();
+                    break;
                 }
             }
-        });
+        }
     }
 
-    grids.forEach((grid, gridIndex) => {
+    // --- Grid processing optimization ---
+    for (let gridIndex = grids.length - 1; gridIndex >= 0; gridIndex--) {
+        const grid = grids[gridIndex];
         grid.update();
+        
+        // Invader shooting logic
         if (frames % invaderProjectileFrequency === 0 && grid.invaders.length > 0) {
-            grid.invaders[Math.floor(Math.random() * grid.invaders.length)].shoot(invaderProjectiles);
+            const randomInvader = grid.invaders[Math.floor(Math.random() * grid.invaders.length)];
+            randomInvader.shoot(invaderProjectiles);
         }
-        // --- Optimized invader & projectile collision ---
-        grid.invaders = grid.invaders.filter((invader, i) => {
+        
+        // Invader collision detection - optimized
+        for (let i = grid.invaders.length - 1; i >= 0; i--) {
+            const invader = grid.invaders[i];
             invader.update({ velocity: grid.velocity });
+            
+            // Check if invaders reached player
             if (invader.position.y + invader.height >= player.position.y) {
                 endGame();
-                return false;
+                return;
             }
+            
             let hit = false;
-            projectiles.forEach((projectile, j) => {
-                if (
-                    projectile.position.y - projectile.radius <= invader.position.y + invader.height &&
-                    projectile.position.x + projectile.radius >= invader.position.x &&
-                    projectile.position.x - projectile.radius <= invader.position.x + invader.width &&
-                    projectile.position.y + projectile.radius >= invader.position.y
-                ) {
+            // Check projectile collisions
+            for (let j = projectiles.length - 1; j >= 0; j--) {
+                const projectile = projectiles[j];
+                if (checkCircleRectCollision(
+                    { x: projectile.position.x, y: projectile.position.y, radius: projectile.radius },
+                    { x: invader.position.x, y: invader.position.y, width: invader.width, height: invader.height }
+                )) {
                     if (!invader.isKilled) {
                         if (invader.isRealPod) {
                             invader.hits++;
                             createParticles({ object: invader, color: '#D92A2A', amount: 10 });
                             if (invader.hits >= INVADER_REAL_POD_HITS) {
                                 invader.isKilled = true;
-                                let points = 200;
-                                score += points;
-                                scoreEl.innerHTML = `Score: ${score}`;
+                                updateScore(score + 200);
                                 createParticles({ object: invader, color: '#D92A2A', amount: 30 });
-                                flashingTexts.push(new FlashingText({ text: `${invader.namespace}/${invader.name}`, position: { x: invader.position.x + invader.width / 2, y: invader.position.y } }));
+                                flashingTexts.push(new FlashingText({ 
+                                    text: `${invader.namespace}/${invader.name}`, 
+                                    position: { x: invader.position.x + invader.halfWidth, y: invader.position.y } 
+                                }));
                                 addKilledPodToSidebar(invader.namespace, invader.name);
                                 playExplosionSound();
                                 reportKill(invader.name, invader.namespace);
@@ -994,31 +1251,38 @@ function animate() {
                             }
                         } else {
                             invader.isKilled = true;
-                            let points = 100;
-                            score += points;
-                            scoreEl.innerHTML = `Score: ${score}`;
+                            updateScore(score + 100);
                             createParticles({ object: invader, color: '#ff9800', amount: 30 });
                             playExplosionSound();
                             hit = true;
                         }
                         projectiles.splice(j, 1);
+                        break;
                     }
                 }
-            });
-            return !hit;
-        });
+            }
+            
+            if (hit) {
+                grid.invaders.splice(i, 1);
+            }
+        }
+        
         if (grid.invaders.length === 0) {
             grids.splice(gridIndex, 1);
             advanceLevel();
         }
-    });
+    }
 
-    if (keys.arrowLeft.pressed) player.velocity.x = -player.speed;
-    else if (keys.arrowRight.pressed) player.velocity.x = player.speed;
-    else player.velocity.x = 0;
+    // Player movement - simplified
+    player.velocity.x = keys.arrowLeft.pressed ? -player.speed : 
+                       keys.arrowRight.pressed ? player.speed : 0;
 
     frames++;
-    if (document.getElementById('debugPanel')) updateDebugPanel();
+    
+    // Debug panel update - only if exists
+    const debugPanel = document.getElementById('debugPanel');
+    if (debugPanel) updateDebugPanel();
+    
     updateMonitoringStatusEl(); // Always update info-panel monitoring status
 }
 
@@ -1030,8 +1294,8 @@ async function startGame() {
     await init();
     gameStartedTimestamp = Date.now();
 
-    // Always start monitoring with every new game
-    const monitorUrlInput = document.getElementById('monitorUrlInput');
+    // Always start monitoring with every new game - use cached element
+    const monitorUrlInput = elements.monitorUrlInput;
     const monitorUrl = monitorUrlInput ? monitorUrlInput.value.trim() : '';
     if (monitorUrl) {
         try {
@@ -1116,8 +1380,9 @@ muteButton.addEventListener('click', () => {
     }
 });
 
-musicButton.addEventListener('click', () => {
+elements.musicButton.addEventListener('click', () => {
     isMusicOn = !isMusicOn;
+    const musicIcon = elements.musicIcon;
     if (!isMusicOn) {
         musicIcon.classList.remove('fa-music');
         musicIcon.classList.add('fa-music-slash');
@@ -1139,24 +1404,28 @@ restartButton.addEventListener('click', () => {
     startGame();
 });
 
-const playOverlay = document.getElementById('playOverlay');
-const playButton = document.getElementById('playButton');
-// Prevent game from starting automatically
+// Optimized play button with cached elements
 let hasGameStarted = false;
+
 function showPlayOverlay() {
-    playOverlay.style.display = 'flex';
+    elements.playOverlay.style.display = 'flex';
 }
+
 function hidePlayOverlay() {
-    playOverlay.style.display = 'none';
+    elements.playOverlay.style.display = 'none';
 }
-playButton.addEventListener('click', async () => {
+
+elements.playButton.addEventListener('click', async () => {
     if (hasGameStarted) return;
     hasGameStarted = true;
-    // Get namespaces from input
-    const namespaceInput = document.getElementById('namespaceInput');
+    
+    // Get namespaces from input - use cached element
+    const namespaceInput = elements.namespaceInput;
     let namespaces = [];
     if (namespaceInput) {
-        namespaces = namespaceInput.value.split(/\r?\n/).map(ns => ns.trim()).filter(ns => ns.length > 0);
+        namespaces = namespaceInput.value.split(/\r?\n/)
+            .map(ns => ns.trim())
+            .filter(ns => ns.length > 0);
         if (namespaces.length > 0) {
             try {
                 await fetch('/namespaces', {
@@ -1176,9 +1445,9 @@ playButton.addEventListener('click', async () => {
 // Show overlay on load
 showPlayOverlay();
 
-const playerNameInput = document.getElementById('playerNameInput');
+// Optimized player name function
 function getPlayerName() {
-    return playerNameInput ? playerNameInput.value.trim() : '';
+    return elements.playerNameInput?.value.trim() || '';
 }
 
 let monitorId = null;
