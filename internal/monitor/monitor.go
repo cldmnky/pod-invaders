@@ -86,6 +86,19 @@ func (m *Manager) runMonitor(mon *Monitor) {
 		Transport: transport,
 	}
 
+	// Run the monitor once immediately
+	resp, err := client.Get(mon.URL)
+	newStatus := "down"
+	if err == nil {
+		defer resp.Body.Close()
+		if resp.StatusCode >= 200 && resp.StatusCode < 500 {
+			newStatus = "up"
+		}
+	} else {
+		log.Printf("Error monitoring URL %s: %v", mon.URL, err)
+	}
+	m.updateStatus(mon.ID, newStatus)
+
 	for {
 		select {
 		case <-mon.Ctx.Done():
