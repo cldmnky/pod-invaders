@@ -69,6 +69,7 @@ export let keys = {
 }, score = 0, lives = 3, level = 1, game = { over: false, active: false }, frames = 0;
 export let animationId;
 export let gameStartedTimestamp;
+let currentMonitorId = null;
 
 // Global frames counter for game entities
 window.frames = 0;
@@ -121,8 +122,9 @@ function endGame() {
     game.active = false;
     switchMusic(false, game); // Switch to normal music, then pause
     backgroundMusic.pause();
-    stopMonitor();
+    stopMonitor(currentMonitorId);
     stopMonitorStatusPolling();
+    currentMonitorId = null;
     
     // --- Highscore submission ---
     const timeTaken = Date.now() - gameStartedTimestamp;
@@ -150,8 +152,9 @@ function winGame() {
     game.active = false;
     switchMusic(false, game); // Switch to normal music, then pause
     backgroundMusic.pause();
-    stopMonitor();
+    stopMonitor(currentMonitorId);
     stopMonitorStatusPolling();
+    currentMonitorId = null;
     
     // --- Highscore submission ---
     const timeTaken = Date.now() - gameStartedTimestamp;
@@ -447,6 +450,14 @@ export async function startGame(countdownText, monitorUrl = '') {
         cancelAnimationFrame(animationId);
         animationId = null;
     }
+    
+    // Stop any existing monitor before starting a new one
+    if (currentMonitorId) {
+        stopMonitor(currentMonitorId);
+        stopMonitorStatusPolling();
+        currentMonitorId = null;
+    }
+    
     await init();
     gameStartedTimestamp = Date.now();
 
@@ -456,6 +467,7 @@ export async function startGame(countdownText, monitorUrl = '') {
             const { startMonitor, startMonitorStatusPolling } = await import('./api.js');
             const monitorId = await startMonitor(monitorUrl);
             if (monitorId) {
+                currentMonitorId = monitorId;
                 startMonitorStatusPolling(monitorId);
             }
         } catch (e) {
