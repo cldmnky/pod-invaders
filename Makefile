@@ -73,11 +73,11 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 
 .PHONY: build
 build: fmt vet ## Build pod-invaders binary.
-	go build -o bin/pod-invaders .
+	go build -o bin/pod-invaders cmd/pod-invaders/main.go
 
 .PHONY: run
 run: fmt vet ## Run pod-invaders from your host.
-	go run . --enable-kube=false
+	go run cmd/pod-invaders/main.go --enable-kube=false
 
 .PHONY: build-container
 build-container: ko ## Build container image with ko.
