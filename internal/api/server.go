@@ -97,9 +97,16 @@ func registerStaticFileHandlers(app *fiber.App) {
 		return serveStaticFile(c, path.Join("assets", assetPath))
 	})
 
+	// Handle JS files in the root views directory
 	app.Get("/:filename.js", func(c *fiber.Ctx) error {
 		filename := c.Params("filename") + ".js"
 		return serveStaticFile(c, path.Join("views", filename))
+	})
+
+	// Handle JS files in the js subdirectory
+	app.Get("/js/*", func(c *fiber.Ctx) error {
+		jsPath := strings.TrimPrefix(c.Path(), "/js/")
+		return serveStaticFile(c, path.Join("views", "js", jsPath))
 	})
 }
 
