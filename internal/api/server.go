@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/cldmnky/pod-invaders/internal/assets"
 	"github.com/cldmnky/pod-invaders/internal/config"
@@ -28,6 +29,7 @@ type Server struct {
 	highscoreCache game.HighscoreCache
 	namespaces     game.Namespaces
 	monitorManager *monitor.Manager
+	kubeConfig     *rest.Config // Kubernetes configuration for client creation
 }
 
 // NewServer creates a new API server instance.
@@ -37,9 +39,11 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	if cfg.EnableKube {
 		log.Println("Kubernetes client is enabled, attempting to connect.")
-		kc, err = k8s.GetKubeClient(cfg.Kubeconfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get kube client: %w", err)
+		if !cfg.EnableOpenShiftAuth {
+			kc, err = k8s.GetKubeClient(cfg.Kubeconfig)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get kube client: %w", err)
+			}
 		}
 	} else {
 		log.Println("Kubernetes client is disabled, running in standalone mode.")
@@ -76,6 +80,9 @@ func Run(cfg *config.Config) error {
 	})
 
 	app.Use(requestLogger())
+	if cfg.EnableOpenShiftAuth {
+		app.Use(server.OpenShiftAuthMiddleware())
+	}
 
 	app.Get("/healthz", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 	app.Get("/readyz", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })

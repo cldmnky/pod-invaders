@@ -33,6 +33,39 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
+        {{- if .Values.openshift.enabled }}
+        - name: oauth-proxy
+          image: "{{ .Values.openshift.oauthProxy.image.repository }}:{{ .Values.openshift.oauthProxy.image.tag }}"
+          imagePullPolicy: {{ .Values.openshift.oauthProxy.image.pullPolicy }}
+          ports:
+            - name: oauth-proxy
+              containerPort: {{ .Values.openshift.oauthProxy.port }}
+              protocol: TCP
+          args:
+            - "--https-address=:{{ .Values.openshift.oauthProxy.port }}"
+            - "--provider=openshift"
+            - "--openshift-service-account={{ include "pod-invaders.serviceAccountName" . }}"
+            - "--upstream={{ .Values.openshift.oauthProxy.upstreamUrl }}"
+            - "--tls-cert=/etc/tls/private/tls.crt"
+            - "--tls-key=/etc/tls/private/tls.key"
+            - "--client-id={{ .Values.openshift.oauthProxy.clientId }}"
+            - "--client-secret-file=/var/run/secrets/kubernetes.io/serviceaccount/token"
+            - "--cookie-secret-file=/etc/proxy/secrets/session_secret"
+            {{- range .Values.openshift.oauthProxy.extraArgs }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- with .Values.openshift.oauthProxy.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: proxy-tls
+              mountPath: /etc/tls/private
+              readOnly: true
+            - name: proxy-secrets
+              mountPath: /etc/proxy/secrets
+              readOnly: true
+        {{- end }}
         - name: {{ .Chart.Name }}
           {{- with .Values.securityContext }}
           securityContext:
@@ -70,10 +103,18 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- with .Values.volumes }}
       volumes:
+        {{- if .Values.openshift.enabled }}
+        - name: proxy-tls
+          secret:
+            secretName: {{ include "pod-invaders.fullname" . }}-proxy-tls
+        - name: proxy-secrets
+          secret:
+            secretName: {{ include "pod-invaders.fullname" . }}-proxy-secrets
+        {{- end }}
+        {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

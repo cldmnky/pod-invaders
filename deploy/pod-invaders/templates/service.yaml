@@ -7,6 +7,12 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
+    {{- if .Values.openshift.enabled }}
+    - port: {{ .Values.openshift.oauthProxy.port }}
+      targetPort: oauth-proxy
+      protocol: TCP
+      name: oauth-proxy
+    {{- end }}
     - port: {{ .Values.service.port }}
       targetPort: http
       protocol: TCP

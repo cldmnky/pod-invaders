@@ -1,0 +1,27 @@
+{{- if and .Values.openshift.enabled .Values.openshift.route.enabled -}}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "pod-invaders.fullname" . }}
+  labels:
+    {{- include "pod-invaders.labels" . | nindent 4 }}
+  {{- with .Values.openshift.route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.openshift.route.host }}
+  host: {{ .Values.openshift.route.host }}
+  {{- end }}
+  to:
+    kind: Service
+    name: {{ include "pod-invaders.fullname" . }}
+    weight: 100
+  port:
+    targetPort: oauth-proxy
+  {{- with .Values.openshift.route.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  wildcardPolicy: None
+{{- end }}
