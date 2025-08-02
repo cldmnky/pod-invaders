@@ -25,7 +25,7 @@ type Server struct {
 	config         *config.Config
 	kubeClient     kubernetes.Interface
 	killCache      *game.KillPodCache
-	highscoreCache *game.HighscoreCache
+	highscoreCache game.HighscoreCache
 	namespaces     game.Namespaces
 	monitorManager *monitor.Manager
 }
@@ -45,11 +45,17 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		log.Println("Kubernetes client is disabled, running in standalone mode.")
 	}
 
+	// Initialize the highscore cache
+	highscoreCache, err := game.NewBadgerCache(cfg.HighscoreDBPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize highscore cache: %w", err)
+	}
+
 	return &Server{
 		config:         cfg,
 		kubeClient:     kc,
 		killCache:      game.NewKillPodCache(),
-		highscoreCache: game.NewHighscoreCache(),
+		highscoreCache: highscoreCache,
 		namespaces:     game.Namespaces{Namespaces: cfg.NamespaceNames},
 		monitorManager: monitor.NewManager(),
 	}, nil

@@ -21,6 +21,8 @@ func (s *Server) registerGameHandlers(app *fiber.App) {
 	app.Post("/highscore", s.handlePostHighscore)
 	app.Get("/highscores", s.handleGetHighscores)
 	app.Post("/namespaces", s.handlePostNamespaces)
+	app.Get("/healthz", s.handleHealthz)
+	app.Get("/readyz", s.handleReadyz)
 }
 
 // registerMonitorHandlers registers the monitoring-related endpoints.
@@ -136,7 +138,20 @@ func (s *Server) handleMonitor(c *fiber.Ctx) error {
 	if m.URL == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "monitor URL cannot be empty"})
 	}
-	if _, err := url.Parse(m.URL); err != nil {
+
+	// Validate URL format more strictly
+	parsedURL, err := url.Parse(m.URL)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid monitor URL format"})
+	}
+
+	// Ensure URL has a valid scheme and host
+	if parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid monitor URL format"})
+	}
+
+	// Only allow http and https schemes
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid monitor URL format"})
 	}
 
@@ -188,4 +203,20 @@ func (s *Server) handleMonitorStatus(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(status)
+}
+
+// Healthz checks if the server is healthy.
+func (s *Server) handleHealthz(c *fiber.Ctx) error {
+	return c.SendStatus(fiber.StatusOK)
+}
+
+// Readyz checks if the server is ready to serve requests.
+func (s *Server) handleReadyz(c *fiber.Ctx) error {
+	if s.kubeClient == nil && s.config.EnableKube {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error": "Kubernetes client is not available"})
+	}
+	if s.highscoreCache == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"error": "Highscore cache is not initialized"})
+	}
+	return c.SendStatus(fiber.StatusOK)
 }

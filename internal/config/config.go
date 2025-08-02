@@ -10,9 +10,10 @@ import (
 
 // Config holds the application configuration.
 type Config struct {
-	Kubeconfig     string
-	EnableKube     bool
-	NamespaceNames []string
+	Kubeconfig      string
+	EnableKube      bool
+	NamespaceNames  []string
+	HighscoreDBPath string // Path to the highscore database
 }
 
 // New initializes a new Config object from command-line flags.
@@ -23,6 +24,7 @@ func New() *Config {
 	pflag.StringVar(&cfg.Kubeconfig, "kubeconfig", filepath.Join(homedir.HomeDir(), ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	pflag.BoolVar(&cfg.EnableKube, "enable-kube", true, "Enable Kubernetes client (default: true)")
 	pflag.StringArrayVar(&cfg.NamespaceNames, "namespaces", []string{"default"}, "List of namespaces to query pods from (default: default)")
+	pflag.StringVar(&cfg.HighscoreDBPath, "highscore-db", "/tmp/highscores.db", "Path to the highscore database file")
 
 	// Add Go's standard flags to pflag
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
