@@ -44,6 +44,7 @@ func NewManager() *Manager {
 
 // Start begins monitoring a new URL.
 func (m *Manager) Start(ctx context.Context, url string) (string, error) {
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
