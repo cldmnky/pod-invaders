@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/gofiber/fiber/v2"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/cldmnky/pod-invaders/internal/game"
 	"github.com/cldmnky/pod-invaders/internal/k8s"
@@ -54,6 +55,15 @@ func (s *Server) handleGetNames(c *fiber.Ctx) error {
 		return c.JSON(pods)
 	}
 
+	if s.config.EnableOpenShiftAuth {
+		// Use the authenticated kube client from the context
+		client, ok := c.Locals("kubeClient").(kubernetes.Interface)
+		if !ok {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Kubernetes client not found"})
+		}
+		s.kubeClient = client
+	}
+
 	pods, err := k8s.GetPods(s.kubeClient, count, s.namespaces.Namespaces...)
 	if err != nil {
 		log.Printf("Error getting pods: %v", err)
@@ -78,6 +88,14 @@ func (s *Server) handleKill(c *fiber.Ctx) error {
 	}
 
 	if s.config.EnableKube {
+		if s.config.EnableOpenShiftAuth {
+			// Use the authenticated kube client from the context
+			client, ok := c.Locals("kubeClient").(kubernetes.Interface)
+			if !ok {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Kubernetes client not found"})
+			}
+			s.kubeClient = client
+		}
 		if err := k8s.KillPod(s.kubeClient, payload); err != nil {
 			log.Printf("Error killing pod: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": fmt.Sprintf("Failed to kill pod: %v", err)})
