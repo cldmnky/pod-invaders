@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: quay.io/cldmnky/pod-invaders
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   tag: ""
 
 config:
