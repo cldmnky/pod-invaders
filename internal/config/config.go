@@ -2,10 +2,8 @@ package config
 
 import (
 	"flag"
-	"path/filepath"
 
 	"github.com/spf13/pflag"
-	"k8s.io/client-go/util/homedir"
 )
 
 // Config holds the application configuration.
@@ -22,7 +20,7 @@ func New() *Config {
 	cfg := &Config{}
 
 	// Define flags using pflag for compatibility with cobra (though cobra is removed)
-	pflag.StringVar(&cfg.Kubeconfig, "kubeconfig", filepath.Join(homedir.HomeDir(), ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	pflag.StringVar(&cfg.Kubeconfig, "kubeconfig", "", "(optional) absolute path to the kubeconfig file")
 	pflag.BoolVar(&cfg.EnableKube, "enable-kube", true, "Enable Kubernetes client (default: true)")
 	pflag.StringArrayVar(&cfg.NamespaceNames, "namespaces", []string{"default"}, "List of namespaces to query pods from (default: default)")
 	pflag.StringVar(&cfg.HighscoreDBPath, "highscore-db", "/tmp/highscores.db", "Path to the highscore database file")
