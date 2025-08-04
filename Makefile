@@ -86,7 +86,7 @@ build-container: ko ## Build container image with ko.
 		--preserve-import-paths=false \
 		--bare=true \
 		--tags=$(VERSION) \
-		.
+		cmd/pod-invaders/main.go
 
 .PHONY: build-and-push-container
 build-and-push-container: ko ## Build and push container image with ko.
@@ -96,7 +96,7 @@ build-and-push-container: ko ## Build and push container image with ko.
 		--bare=true \
 		--tags=$(VERSION) \
 		--push=true \
-		.
+		cmd/pod-invaders/main.go
 
 .PHONY: docker-build
 docker-build: ## Build docker image using Containerfile.
