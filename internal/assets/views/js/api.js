@@ -2,14 +2,17 @@
 import { updateDebugPanelMonitorStatus } from './ui.js';
 
 export async function reportKill(podName, namespace, isRealPod) {
+    // Fake pods are simulated locally - never report them as real kills,
+    // otherwise the server would attempt (and fail) to delete non-existent pods.
+    if (!isRealPod) return;
     try {
         await fetch('/kill', {
-            method: 'POST', 
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: podName, namespace: namespace, isRealPod: true })
         });
-    } catch (error) { 
-        console.error("Failed to report kill:", error); 
+    } catch (error) {
+        console.error("Failed to report kill:", error);
     }
 }
 

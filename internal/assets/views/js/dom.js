@@ -6,6 +6,8 @@ export const elements = {
     scoreEl: document.getElementById('scoreEl'),
     livesEl: document.getElementById('livesEl'),
     levelEl: document.getElementById('levelEl'),
+    comboEl: document.getElementById('comboEl'),
+    powerupEl: document.getElementById('powerupEl'),
     gameOverScreen: document.getElementById('gameOverScreen'),
     endGameTitle: document.getElementById('endGameTitle'),
     finalScoreEl: document.getElementById('finalScore'),
@@ -23,7 +25,11 @@ export const elements = {
     namespaceInput: document.getElementById('namespaceInput'),
     monitorUrlInput: document.getElementById('monitorUrlInput'),
     monitoringStatusEl: document.getElementById('monitoringStatusEl'),
-    highscoreTableContainer: document.getElementById('highscoreTableContainer')
+    highscoreTableContainer: document.getElementById('highscoreTableContainer'),
+    pauseOverlay: document.getElementById('pauseOverlay'),
+    touchLeft: document.getElementById('touchLeft'),
+    touchRight: document.getElementById('touchRight'),
+    touchFire: document.getElementById('touchFire')
 };
 
 // Extract commonly used elements for better performance

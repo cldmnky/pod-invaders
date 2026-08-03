@@ -12,17 +12,27 @@ export class Player {
         this.opacity = 1;
         this.haloTimer = 0; // Frames remaining for red halo
         this.haloMax = 60; // Duration for halo effect
+        this.invulnerableTimer = 0; // Invulnerability frames after being hit
+        this.flashTimer = 0; // White hit-flash frames
+        this.shield = false; // Shield absorbs one hit
+        // Active power-up timers (frames remaining), 0 = inactive
+        this.powerups = { rapidFire: 0, tripleShot: 0, slowMo: 0 };
         // Cache commonly used values
         this.halfWidth = this.width / 2;
         this.halfHeight = this.height / 2;
     }
-    
+
     draw() {
         ctx.save();
         ctx.globalAlpha = this.opacity;
         ctx.translate(this.position.x, this.position.y);
         const headX = this.halfWidth, headY = this.halfHeight;
-        
+
+        // Blink while invulnerable (after being hit)
+        if (this.invulnerableTimer > 0 && Math.floor(window.frames / 4) % 2 === 0) {
+            ctx.globalAlpha = this.opacity * 0.3;
+        }
+
         // Draw glowing, fading red halo if hit - optimized
         if (this.haloTimer > 0) {
             const fade = this.haloTimer / this.haloMax;
@@ -38,56 +48,85 @@ export class Player {
             ctx.stroke();
             ctx.restore();
         }
-        
+
+        // White hit flash
+        if (this.flashTimer > 0) {
+            ctx.globalAlpha = this.opacity * (this.flashTimer / 30) * 0.8;
+            ctx.beginPath();
+            ctx.arc(headX, headY, 24, 0, PI2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.globalAlpha = this.opacity;
+        }
+
+        // Draw shield bubble
+        if (this.shield) {
+            ctx.save();
+            ctx.globalAlpha = 0.25 + Math.sin(window.frames * 0.1) * 0.1;
+            ctx.beginPath();
+            ctx.arc(headX, headY, 30, 0, PI2);
+            ctx.strokeStyle = '#3298dc';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#3298dc';
+            ctx.shadowBlur = 12;
+            ctx.stroke();
+            ctx.restore();
+        }
+
         // Draw player character - cheerful monkey design
         // Draw ears
         ctx.fillStyle = '#A0522D';
         ctx.beginPath(); ctx.arc(headX - 20, headY - 5, 10, 0, PI2); ctx.fill();
         ctx.beginPath(); ctx.arc(headX + 20, headY - 5, 10, 0, PI2); ctx.fill();
-        
+
         // Draw main head
         ctx.beginPath(); ctx.arc(headX, headY, 20, 0, PI2); ctx.fill();
-        
+
         // Draw face
         ctx.fillStyle = '#F5DEB3';
         ctx.beginPath(); ctx.arc(headX, headY, 15, 0, PI2); ctx.fill();
-        
+
         // Draw red mohawk/hat on top
         ctx.fillStyle = '#FF4444';
         ctx.beginPath(); ctx.arc(headX, headY - 18, 3, 0, PI2); ctx.fill();
-        
+
         // Draw snout/muzzle area
         ctx.fillStyle = '#F5DEB3';
         ctx.beginPath(); ctx.arc(headX, headY + 5, 8, 0, PI2); ctx.fill();
-        
+
         // Draw white eyes
         ctx.fillStyle = '#FFF';
         ctx.beginPath(); ctx.arc(headX - 6, headY - 3, 4, 0, PI2); ctx.fill();
         ctx.beginPath(); ctx.arc(headX + 6, headY - 3, 4, 0, PI2); ctx.fill();
-        
+
         // Draw black pupils
         ctx.fillStyle = '#000';
         ctx.beginPath(); ctx.arc(headX - 6, headY - 3, 2, 0, PI2); ctx.fill();
         ctx.beginPath(); ctx.arc(headX + 6, headY - 3, 2, 0, PI2); ctx.fill();
-        
+
         // Draw smile
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(headX, headY + 3, 6, 0.2, Math.PI - 0.2);
         ctx.stroke();
-        
+
         ctx.restore();
     }
-    
+
     update() {
         this.draw();
-        
+
         // Update position with boundaries
         this.position.x += this.velocity.x;
         if (this.position.x <= 0) this.position.x = 0;
         if (this.position.x >= 550) this.position.x = 550; // Canvas width - player width
-        
+
         if (this.haloTimer > 0) this.haloTimer--;
+        if (this.invulnerableTimer > 0) this.invulnerableTimer--;
+        if (this.flashTimer > 0) this.flashTimer--;
+        if (this.powerups.rapidFire > 0) this.powerups.rapidFire--;
+        if (this.powerups.tripleShot > 0) this.powerups.tripleShot--;
+        if (this.powerups.slowMo > 0) this.powerups.slowMo--;
     }
 }

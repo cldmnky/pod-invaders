@@ -1,5 +1,6 @@
 // UI Functions - Score, Lives, Level, Highscore, Debug Panel
 import { scoreEl, livesEl, levelEl, elements } from './dom.js';
+import { POWERUP_TYPES } from './config.js';
 
 // Performance optimization: Cache score display to reduce DOM updates
 let lastScoreDisplay = '';
@@ -42,6 +43,56 @@ export function resetCachedDisplays() {
     lastScoreDisplay = '';
     lastLivesDisplay = '';
     lastLevelDisplay = '';
+    lastComboDisplay = '';
+    lastPowerupDisplay = '';
+}
+
+// Combo multiplier display (cached to avoid needless DOM updates)
+let lastComboDisplay = '';
+export function updateComboDisplay(combo, multiplier) {
+    const el = elements.comboEl;
+    if (!el) return;
+    const display = multiplier > 1 ? `x${multiplier} COMBO (${combo})` : '';
+    if (display !== lastComboDisplay) {
+        el.innerHTML = display;
+        el.style.color = multiplier > 1 ? '#ffdd57' : '#999';
+        lastComboDisplay = display;
+    }
+}
+
+// Active power-up display (cached to avoid needless DOM updates)
+let lastPowerupDisplay = '';
+export function updatePowerupDisplay(powerups) {
+    const el = elements.powerupEl;
+    if (!el) return;
+    if (!powerups || (!powerups.rapidFire && !powerups.tripleShot && !powerups.slowMo)) {
+        if (lastPowerupDisplay !== '') {
+            el.innerHTML = '';
+            lastPowerupDisplay = '';
+        }
+        return;
+    }
+    const seconds = (frames) => Math.ceil(frames / 60);
+    const parts = [];
+    if (powerups.rapidFire > 0) parts.push(`<span style="color:${POWERUP_TYPES.rapid.color};">RAPID ${seconds(powerups.rapidFire)}s</span>`);
+    if (powerups.tripleShot > 0) parts.push(`<span style="color:${POWERUP_TYPES.triple.color};">TRIPLE ${seconds(powerups.tripleShot)}s</span>`);
+    if (powerups.slowMo > 0) parts.push(`<span style="color:${POWERUP_TYPES.slow.color};">SLOW ${seconds(powerups.slowMo)}s</span>`);
+    const display = parts.join(' ');
+    if (display !== lastPowerupDisplay) {
+        el.innerHTML = display;
+        lastPowerupDisplay = display;
+    }
+}
+
+// Pause overlay
+export function showPauseOverlay() {
+    const overlay = elements.pauseOverlay;
+    if (overlay) overlay.style.display = 'flex';
+}
+
+export function hidePauseOverlay() {
+    const overlay = elements.pauseOverlay;
+    if (overlay) overlay.style.display = 'none';
 }
 
 // Highscore functions
@@ -142,12 +193,14 @@ export function showDebugPanel() {
 export function updateDebugPanel(gameState = {}) {
     const info = document.getElementById('debugInfo');
     if (!info) return;
-    
+
     const {
         frames = 0,
         score = 0,
         level = 1,
         lives = 3,
+        combo = 0,
+        multiplier = 1,
         invaderSpeed = 1,
         invaderProjectileSpeed = 3,
         bossProjectileSpeed = 4,
@@ -160,19 +213,20 @@ export function updateDebugPanel(gameState = {}) {
         particles = [],
         flashingTexts = []
     } = gameState;
-    
+
     let monitoringLine = '<b>Monitoring:</b> ';
     if (monitorIsUp) {
         monitoringLine += '<span style="color:#23d160;font-size:1.2em;">&#x2705;</span>';
     } else {
         monitoringLine += '<span style="color:#ff3860;font-size:1.2em;">&#x274C;</span>';
     }
-    
+
     info.innerHTML = `
         <b>Frames:</b> ${frames}<br>
         <b>Score:</b> ${score}<br>
         <b>Level:</b> ${level}<br>
         <b>Lives:</b> ${lives}<br>
+        <b>Combo:</b> x${multiplier} (${combo} kills)<br>
         ${monitoringLine}<br>
         <b>Invader Speed:</b> ${invaderSpeed}<br>
         <b>Invader Projectile Speed:</b> ${invaderProjectileSpeed}<br>

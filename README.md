@@ -6,12 +6,16 @@ A Kubernetes-themed web game inspired by Space Invaders, designed for chaos engi
 
 - **Classic Space Invaders Gameplay**: Navigate your ship and shoot at pod invaders
 - **Real Kubernetes Integration**: Destroy actual pods in your cluster or play with fake pods
-- **Boss Battles**: Face off against powerful boss enemies with increasing difficulty
+- **Boss Battles**: Multi-phase boss enemies with unique attack patterns and summoned minions
+- **Endless Mode**: Difficulty and enemy formations keep scaling after the campaign
+- **Power-ups**: Rapid fire, triple shot, shield, extra life, and slow-mo dropped by invaders
+- **Invader Variety**: Tanky and shooter pod types, plus mystery UFO bonus ships
+- **Combo Multiplier**: Chain kills without getting hit to multiply your score
 - **Progressive Difficulty**: Each level increases in speed, projectile frequency, and complexity
 - **High Score Tracking**: Compete with others and track your best performances
 - **Real-time Monitoring**: Monitor backend services while playing
-- **Audio & Visual Effects**: Immersive sound effects and visual feedback
-- **Responsive Design**: Works on desktop and mobile devices
+- **Audio & Visual Effects**: Immersive sound effects, screen shake, and visual feedback
+- **Responsive Design**: Keyboard, WASD, and touch controls for desktop and mobile
 
 ## 🛠 Technology Stack
 
@@ -90,21 +94,26 @@ go build -o pod-invaders .
 
 ### Game Difficulty Parameters
 
-The game includes several configurable difficulty parameters in `main.js`:
+The game includes several configurable difficulty parameters in `config.js`:
 
 ```javascript
 // Projectile speeds
-let invaderProjectileSpeed = 3;  // Easy: 2, Hard: 5
+let invaderProjectileSpeed = 2;  // Easy: 2, Hard: 5
 let bossProjectileSpeed = 4;     // Easy: 3, Hard: 6
 
-// Boss characteristics  
+// Boss characteristics
 let bossMaxHits = 7;             // Easy: 5, Hard: 12
 let bossVerticalAmplitude = 20;  // Easy: 10, Hard: 40
 
 // Movement and timing
-let invaderSpeed = 1;            // Easy: 0.7, Hard: 2
+let invaderSpeed = 0.7;          // Easy: 0.7, Hard: 2
 let invaderProjectileFrequency = 150; // Easy: 400, Hard: 100
 ```
+
+Additional tunables in `config.js`: power-up drop rates and durations, combo scaling
+(`COMBO_MULTIPLIER_STEP`), UFO spawn frequency, player fire cooldown, invulnerability
+frames, and screen-shake intensity. Levels 1-10 are a fixed campaign; beyond that,
+`getLevelConfig()` generates endless procedural formations.
 
 ## 🎯 API Endpoints
 
@@ -120,7 +129,7 @@ let invaderProjectileFrequency = 150; // Easy: 400, Hard: 100
 
 - `POST /namespaces` - Update target namespaces
 - `POST /monitor` - Start monitoring a service
-- `POST /monitor/stop` - Stop monitoring a service  
+- `POST /monitor/stop` - Stop monitoring a service
 - `GET /monitor/status?id=<id>` - Get monitor status
 
 ### Static Assets
@@ -131,15 +140,33 @@ let invaderProjectileFrequency = 150; // Easy: 400, Hard: 100
 ## 🎮 How to Play
 
 1. **Start the Game**: Open the web interface and click to begin
-2. **Movement**: Use arrow keys or WASD to move your ship
-3. **Shooting**: Press spacebar to fire projectiles
+2. **Movement**: Use arrow keys, A/D, or on-screen touch buttons to move your ship
+3. **Shooting**: Press and hold SPACE or W to autofire
 4. **Objective**: Destroy all pod invaders to advance to the next level
-5. **Boss Fights**: Every few levels, face a powerful boss enemy
-6. **Scoring**:
+5. **Boss Fights**: Every other level, face a powerful boss with phase-based attacks
+6. **Combo**: Chain kills without getting hit to build a score multiplier (up to x5)
+7. **Power-ups**: Grab falling drops - rapid fire, triple shot, shield, extra life, slow-mo
+8. **UFOs**: Shoot down mystery UFOs for bonus points and guaranteed power-ups
+9. **Pause**: Press P or ESC to pause, R to restart
+10. **Scoring**:
 
-   - Fake pods: 10 points
-   - Real pods: 50 points
-   - Boss enemies: 100+ points (scales with difficulty)
+   - Fake pods: 100 points (normal), 150 (shooter), 300 (tanky)
+   - Real pods: 200 points (normal), 250 (shooter), 400 (tanky)
+   - Boss enemies: 1000+ points (scales with multiplier)
+   - Mystery UFO: 200-500 points
+   - Monitor up bonus: 1000 points per level
+
+## ⚡ Power-ups
+
+| Power-up | Effect | Duration |
+|----------|--------|----------|
+| Rapid Fire | Much faster shooting | 10s |
+| Triple Shot | Fire 3 projectiles in a spread | 10s |
+| Shield | Absorbs one hit | until hit |
+| Extra Life | +1 life (up to 5) | instant |
+| Slow-Mo | Invader projectiles move at half speed | 6s |
+
+Real pods drop power-ups almost twice as often as fake pods, and tanky pods always drop one.
 
 ## 🔧 Development
 
@@ -193,7 +220,7 @@ go test ./...
 Pod Invaders is designed for chaos engineering scenarios:
 
 1. **Controlled Pod Deletion**: Safely test application resilience by destroying pods in a gamified way
-2. **Service Monitoring**: Monitor critical services while performing chaos experiments  
+2. **Service Monitoring**: Monitor critical services while performing chaos experiments
 3. **Team Building**: Make chaos engineering fun and collaborative
 4. **Training**: Teach Kubernetes concepts through interactive gameplay
 5. **Incident Response**: Gamify incident response training

@@ -91,6 +91,61 @@
             color: #ffdd57;
             font-family: 'Courier New', Courier, monospace;
         }
+        /* Pause overlay styles */
+        #pauseOverlay {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 103;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 2rem 3rem;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        #pauseOverlay h2 {
+            font-size: 3rem;
+            color: #ffdd57;
+            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 0.5rem;
+        }
+        #pauseOverlay p {
+            color: #fff;
+            font-size: 1.1rem;
+        }
+        /* Touch controls (shown on touch/coarse-pointer devices) */
+        .touch-controls {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem 0;
+            gap: 1rem;
+        }
+        .touch-btn {
+            flex: 1;
+            height: 64px;
+            font-size: 2rem;
+            border-radius: 12px;
+            border: 1px solid #363636;
+            background: #181818;
+            color: #ffdd57;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .touch-btn:active {
+            background: #2c2c2c;
+        }
+        @media (pointer: coarse) {
+            .touch-controls {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body>
@@ -120,6 +175,8 @@
             <span id="scoreEl">Score: 0</span>
             <span id="levelEl">Level: 1</span>
             <span id="livesEl">Lives: 3</span>
+            <span id="comboEl" style="color:#999;font-size:1rem;"></span>
+            <span id="powerupEl" style="font-size:0.85rem;"></span>
             <span id="monitoringStatusEl" style="margin-left:12px;"></span>
             <!-- Mute/Unmute Button -->
             <button id="muteButton" class="button is-dark is-small" title="Mute/Unmute">
@@ -156,11 +213,25 @@
         <div id="countdownOverlay">
             <span id="countdownText"></span>
         </div>
+
+        <!-- Pause Overlay -->
+        <div id="pauseOverlay">
+            <h2>PAUSED</h2>
+            <p>Press P or ESC to resume</p>
+        </div>
+    </div>
+
+    <!-- Touch Controls (visible on touch devices) -->
+    <div class="touch-controls">
+        <button id="touchLeft" class="touch-btn" title="Move left">◀</button>
+        <button id="touchFire" class="touch-btn" title="Fire">FIRE</button>
+        <button id="touchRight" class="touch-btn" title="Move right">▶</button>
     </div>
 
     <!-- Instructions -->
     <div class="instructions">
-        <p>Use ◀️ and ▶️ arrow keys to move. Press SPACE to shoot.</p>
+        <p>Move: ◀️ ▶️ or A/D &nbsp;·&nbsp; Shoot: SPACE or W (hold for autofire) &nbsp;·&nbsp; Pause: P/ESC &nbsp;·&nbsp; Restart: R</p>
+        <p>Destroy pod invaders. Blue = real pods (worth more, drop better loot), orange = fake. Chain kills for combo multipliers!</p>
     </div>
 
     <!-- Highscore Table: Always visible and below the instructions -->

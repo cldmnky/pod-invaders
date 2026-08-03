@@ -5,3 +5,5 @@ export { Invader } from './invader.js';
 export { Boss, setBossImage } from './boss.js';
 export { Grid } from './grid.js';
 export { Particle, FlashingText } from './particle.js';
+export { PowerUp } from './powerup.js';
+export { Ufo } from './ufo.js';
